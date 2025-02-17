@@ -1,0 +1,50 @@
+name: Autograding Tests
+
+on:
+  - push
+  - workflow_dispatch
+  - repository_dispatch
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Compile and Run C Tests
+    - name: Compile C Code
+      run: |
+        gcc -o c/divisible c/divisible_by_5.c
+        gcc -o c/sum c/sum_function.c
+
+    - name: Run C Test for Divisibility by 5
+      run: bash c/test_divisible_by_5.sh
+
+    - name: Run C Test for Sum Function
+      run: bash c/test_sum.sh
+
+    # Run Python Tests
+    - name: Set Up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+
+    - name: Install Dependencies (if needed)
+      run: pip install -r python/requirements.txt || true
+
+    - name: Run Python Test for Divisibility by 5
+      run: python3 python/test_divisible_by_5.py
+
+    - name: Run Python Test for Sum Function
+      run: python3 python/test_sum.py
+
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
