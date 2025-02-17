@@ -14,16 +14,17 @@ jobs:
   run-autograding-tests:
     runs-on: ubuntu-latest
     if: github.actor != 'github-classroom[bot]'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Compile and Run C Tests
+    # Compile C Code
     - name: Compile C Code
       run: |
-        gcc -o ./c/divisible ./c/divisible_by_5.c
-        gcc -o ./c/sum ./c/sum_function.c
+        ls -R   # List files to check if c/ directory exists
+        gcc c/divisible_by_5.c -o c/divisible   # Compile the C program
+        gcc c/sum_function.c -o c/sum           # Compile sum function
 
     - name: Run C Test for Divisibility by 5
       run: bash c/test_divisible_by_5.sh
