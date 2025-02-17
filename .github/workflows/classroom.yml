@@ -19,33 +19,53 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Compile C Code
-    - name: Compile C Code
+    - name: Debug - List Files
+      run: ls -R  # Check if files exist in the repository
+
+    - name: Compile C Programs
       run: |
-        ls -R   # List files to check if c/ directory exists
-        gcc c/divisible_by_5.c -o c/divisible   # Compile the C program
-        gcc c/sum_function.c -o c/sum           # Compile sum function
+        echo "Compiling C programs..."
+        cd c
+        gcc -o divisible divisible_by_5.c || { echo "Compilation Failed: divisible_by_5.c"; exit 1; }
+        gcc -o sum sum_function.c || { echo "Compilation Failed: sum_function.c"; exit 1; }
+        cd ..
 
     - name: Run C Test for Divisibility by 5
-      run: bash c/test_divisible_by_5.sh
+      run: |
+        echo "Running C Test for Divisibility by 5..."
+        cd c
+        bash test_divisible_by_5.sh || { echo "C Test for Divisibility Failed"; exit 1; }
+        cd ..
 
     - name: Run C Test for Sum Function
-      run: bash c/test_sum.sh
+      run: |
+        echo "Running C Test for Sum Function..."
+        cd c
+        bash test_sum.sh || { echo "C Test for Sum Function Failed"; exit 1; }
+        cd ..
 
-    # Run Python Tests
     - name: Set Up Python
       uses: actions/setup-python@v3
       with:
         python-version: "3.8"
 
     - name: Install Dependencies (if needed)
-      run: pip install -r python/requirements.txt || true
+      run: |
+        if [ -f python/requirements.txt ]; then
+          pip install -r python/requirements.txt
+        else
+          echo "No requirements.txt found, skipping dependency installation."
+        fi
 
     - name: Run Python Test for Divisibility by 5
-      run: python3 python/test_divisible_by_5.py
+      run: |
+        echo "Running Python Test for Divisibility by 5..."
+        python3 python/test_divisible_by_5.py || { echo "Python Test for Divisibility Failed"; exit 1; }
 
     - name: Run Python Test for Sum Function
-      run: python3 python/test_sum.py
+      run: |
+        echo "Running Python Test for Sum Function..."
+        python3 python/test_sum.py || { echo "Python Test for Sum Function Failed"; exit 1; }
 
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
