@@ -22,8 +22,8 @@ jobs:
     # Compile and Run C Tests
     - name: Compile C Code
       run: |
-        gcc -o c/divisible c/divisible_by_5.c
-        gcc -o c/sum c/sum_function.c
+        gcc -o ./c/divisible ./c/divisible_by_5.c
+        gcc -o ./c/sum ./c/sum_function.c
 
     - name: Run C Test for Divisibility by 5
       run: bash c/test_divisible_by_5.sh
