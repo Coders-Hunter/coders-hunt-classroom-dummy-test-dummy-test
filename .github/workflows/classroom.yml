@@ -3,69 +3,71 @@ name: Autograding Tests
 on:
   - push
   - workflow_dispatch
-  - repository_dispatch
 
 permissions:
-  checks: write
   actions: read
   contents: read
 
 jobs:
-  run-autograding-tests:
+  autograding:
     runs-on: ubuntu-latest
-    if: github.actor != 'github-classroom[bot]'
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Debug - List Files
-      run: ls -R  # Check if files exist in the repository
+      - name: Make Shell Scripts Executable
+        run: |
+          chmod +x ./c/test_divisible_by_5.sh
+          chmod +x ./c/test_sum.sh
 
-    - name: Compile C Programs
-      run: |
-        echo "Compiling C programs..."
-        cd c
-        gcc -o divisible divisible_by_5.c || { echo "Compilation Failed: divisible_by_5.c"; exit 1; }
-        gcc -o sum sum_function.c || { echo "Compilation Failed: sum_function.c"; exit 1; }
-        cd ..
+      - name: Compile and Test C Programs - Divisibility by 5
+        id: divisibility-test
+        uses: classroom-resources/autograding-io-grader@v1
+        with:
+          test-name: Divisibility by 5 Test
+          command: "./c/test_divisible_by_5.sh"
+          input: 10
+          expected-output: "TRUE"
+          comparison-method: exact
+          timeout: 10
+          max-score: 10
 
-    - name: Run C Test for Divisibility by 5
-      run: |
-        echo "Running C Test for Divisibility by 5..."
-        cd c
-        bash test_divisible_by_5.sh || { echo "C Test for Divisibility Failed"; exit 1; }
-        cd ..
+      - name: Compile and Test C Programs - Sum Function
+        id: sum-test
+        uses: classroom-resources/autograding-io-grader@v1
+        with:
+          test-name: Sum Function Test
+          command: "./c/test_sum.sh"
+          input: "5, 7"
+          expected-output: "Sum: 12"
+          comparison-method: exact
+          timeout: 10
+          max-score: 10
 
-    - name: Run C Test for Sum Function
-      run: |
-        echo "Running C Test for Sum Function..."
-        cd c
-        bash test_sum.sh || { echo "C Test for Sum Function Failed"; exit 1; }
-        cd ..
+      - name: Run Python Test for Divisibility by 5
+        id: python-divisibility-test
+        uses: classroom-resources/autograding-python-grader@v1
+        with:
+          test-name: Python Divisibility Test
+          command: python3 python/test_divisible_by_5.py
+          timeout: 10
+          max-score: 10
 
-    - name: Set Up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.8"
+      - name: Run Python Test for Sum Function
+        id: python-sum-test
+        uses: classroom-resources/autograding-python-grader@v1
+        with:
+          test-name: Python Sum Test
+          command: python3 python/test_sum.py
+          timeout: 10
+          max-score: 10
 
-    - name: Install Dependencies (if needed)
-      run: |
-        if [ -f python/requirements.txt ]; then
-          pip install -r python/requirements.txt
-        else
-          echo "No requirements.txt found, skipping dependency installation."
-        fi
-
-    - name: Run Python Test for Divisibility by 5
-      run: |
-        echo "Running Python Test for Divisibility by 5..."
-        python3 python/test_divisible_by_5.py || { echo "Python Test for Divisibility Failed"; exit 1; }
-
-    - name: Run Python Test for Sum Function
-      run: |
-        echo "Running Python Test for Sum Function..."
-        python3 python/test_sum.py || { echo "Python Test for Sum Function Failed"; exit 1; }
-
-    - name: Autograding Reporter
-      uses: classroom-resources/autograding-grading-reporter@v1
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          DIVISIBILITY-TEST_RESULTS: "${{steps.divisibility-test.outputs.result}}"
+          SUM-TEST_RESULTS: "${{steps.sum-test.outputs.result}}"
+          PYTHON-DIVISIBILITY-TEST_RESULTS: "${{steps.python-divisibility-test.outputs.result}}"
+          PYTHON-SUM-TEST_RESULTS: "${{steps.python-sum-test.outputs.result}}"
+        with:
+          runners: divisibility-test,sum-test,python-divisibility-test,python-sum-test
